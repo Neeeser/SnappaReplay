@@ -4,7 +4,7 @@ import cv2
 import time
 from collections import deque
 
-# Path where videos are storeds
+# Path where videos are stored
 root_video_path = 'videos/'
 timestamp = time.strftime("%Y%m%d-%H%M%S")
 filename = f'Game_{timestamp}/'
@@ -65,27 +65,37 @@ def detect_dice(frame):
 
     return frame
 
+
 def draw_scoreboard(frame, score_left, score_right, elapsed_time):
     h, w, _ = frame.shape
 
-    # Define properties of the scoreboard
-    height = 100  # Height of the scoreboard
-    color = (42,50,155) # White color for the scoreboard
-    thickness = -1  # Fill the rectangle
+    # Flips the frame horizontally
+    frame = cv2.flip(frame, 1)
 
-    # Draw the scoreboard rectangle
-    scoreboard = cv2.rectangle(frame, (0, h - height), (w, h), color, thickness)
+    # Define properties of the scoreboard
+    height = 80  # Height of the scoreboard
+    color = (42, 50, 155)  # Color for the scoreboard
+    alpha = 0.7  # Transparency factor [0, 1] where 0 is completely transparent and 1 is completely opaque
+
+    # Create a copy of the original frame
+    overlay = frame.copy()
+
+    # Draw the transparent rectangle on the copy of the original frame
+    cv2.rectangle(overlay, (0, h - height), (w, h), color, -1)
+
+    # Blend the original frame with the overlay using alpha
+    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
     # Define font and scale
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 2
-    font_color = (58,224,168)#(224, 168,58)#(168, 58, 224)  # Black color for the text
+    font_color = (58, 224, 168)  # Color for the text
     font_thickness = 2
 
     # Position the scores on the scoreboard
-    left_score_position = (int(w * 0.25), h - int(height * 0.5))
-    right_score_position = (int(w * 0.75), h - int(height * 0.5))
-    time_position = (int(w * 0.5), h - int(height * 0.5))
+    left_score_position = (int(w * 0.15 - font_scale * 10), h - int(height * 0.5 - font_scale * 10))
+    right_score_position = (int(w * 0.85 + font_scale * 10), h - int(height * 0.5 - font_scale * 10))
+    time_position = (int(w * 0.5 - font_scale * 10), h - int(height * 0.5 - font_scale * 10))
 
     # Put the scores and elapsed time on the scoreboard
     cv2.putText(frame, str(score_left), left_score_position, font, font_scale, font_color, font_thickness, cv2.LINE_AA)
@@ -94,6 +104,7 @@ def draw_scoreboard(frame, score_left, score_right, elapsed_time):
     cv2.putText(frame, elapsed_time, time_position, font, font_scale, font_color, font_thickness, cv2.LINE_AA)
 
     return frame
+
 
 def put_text(frame):
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -115,6 +126,8 @@ def put_text(frame):
 
 print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
 start_time = time.time()
+score_left = 0  # Replace with the actual score
+score_right = 0  # Replace with the actual score
 try:
     while True:
         ret, frame = cap.read()
@@ -125,10 +138,9 @@ try:
         # Draw the scoreboard
         elapsed_time_sec = int(time.time() - start_time)
         elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
-        score_left = 2  # Replace with the actual score
-        score_right = 5  # Replace with the actual score
 
-        frame = detect_dice(frame)
+
+        #frame = detect_dice(frame)
         frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
 
         # # Save to full game video
@@ -169,6 +181,11 @@ try:
 
             # Clear the buffer
             buffer.clear()
+
+        elif key == ord('1'):
+            score_left += 1
+        elif key == ord('2'):
+            score_right += 1
 
         # If not in replay mode, write the frame to full_game.avi
         else:
