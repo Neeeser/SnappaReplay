@@ -32,7 +32,7 @@ frame_height = int(cap.get(4))
 # Adjust frame rate and duration as needed
 frame_rate = 20.0  # frames per second
 duration = 30  # duration to save in seconds
-
+frame_display_time = int(1000 / frame_rate)
 
 # Define a deque to hold the last 'duration' seconds of frames
 buffer = deque(maxlen=int(frame_rate) * duration)
@@ -158,29 +158,28 @@ try:
         if key == ord('q'):
             break
         elif key == ord('s'):
+            # Prepare filename and output writer but do not write yet
             timestamp = time.strftime("%Y%m%d-%H%M%S")
             filename = video_path + f'saved_clip_{timestamp}.avi'
-            out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
+
+            # Replay the frames in the buffer
             for index, frame in enumerate(buffer):
-                if index < frame_rate * 10:  # for the first 3 seconds
+                if index < frame_rate * 3:  # for the first 3 seconds
                     frame = put_text(frame)
+                cv2.imshow('Frame', frame)
+                if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
+                    break
+
+            # Save the clip after playback
+            out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
+            for frame in buffer:
                 out_clip.write(frame)
             out_clip.release()
             print(f"Saved the last {duration} seconds to {filename}")
 
-            # Replay the saved clip
-            cap_clip = cv2.VideoCapture(filename)
-            while True:
-                ret, frame = cap_clip.read()
-                if not ret:
-                    break
-                cv2.imshow('Frame', frame)
-                if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
-                    break
-            cap_clip.release()
-
             # Clear the buffer
             buffer.clear()
+
 
         elif key == ord('1'):
             score_left += 1
