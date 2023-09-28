@@ -1,10 +1,30 @@
+import os
+
 import cv2
 import time
 from collections import deque
 
+# Path where videos are storeds
+root_video_path = 'videos/'
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+filename = f'Game_{timestamp}/'
+video_path = root_video_path + filename
+full_video_name = video_path + 'full_game.avi'
+
+# Check if those directory exists, if not create them
+if not os.path.exists(root_video_path):
+    os.makedirs(root_video_path)
+if not os.path.exists(video_path):
+    os.makedirs(video_path)
+
 
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    exit()
+
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 frame_width = int(cap.get(3))
 frame_height = int(cap.get(4))
@@ -18,7 +38,7 @@ duration = 30  # duration to save in seconds
 buffer = deque(maxlen=int(frame_rate) * duration)
 
 # Define the video writer for the full game
-out_full = cv2.VideoWriter('full_game.avi', fourcc, frame_rate, (frame_width, frame_height))
+out_full = cv2.VideoWriter(full_video_name, fourcc, frame_rate, (frame_width, frame_height))
 
 
 def detect_dice(frame):
@@ -111,8 +131,8 @@ try:
         frame = detect_dice(frame)
         frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
 
-        # Save to full game video
-        out_full.write(frame)
+        # # Save to full game video
+        # out_full.write(frame)
 
         # Save to buffer
         buffer.append(frame)
@@ -127,7 +147,7 @@ try:
             break
         elif key == ord('s'):
             timestamp = time.strftime("%Y%m%d-%H%M%S")
-            filename = f'saved_clip_{timestamp}.avi'
+            filename = video_path + f'saved_clip_{timestamp}.avi'
             out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
             for index, frame in enumerate(buffer):
                 if index < frame_rate * 5:  # for the first 3 seconds
@@ -146,6 +166,13 @@ try:
                 if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
                     break
             cap_clip.release()
+
+            # Clear the buffer
+            buffer.clear()
+
+        # If not in replay mode, write the frame to full_game.avi
+        else:
+            out_full.write(frame)
 
 finally:
     # Release resources
