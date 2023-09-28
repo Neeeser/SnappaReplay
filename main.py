@@ -2,6 +2,7 @@ import cv2
 import time
 from collections import deque
 
+
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
