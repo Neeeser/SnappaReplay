@@ -108,7 +108,7 @@ def draw_scoreboard(frame, score_left, score_right, elapsed_time):
 
 def put_text(frame):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    text = "American Snappa League"
+    text = "FUCK U"
     color = (0, 0, 255)  # Red
     thickness = 2
     x = int(frame_width/2) - 200  # Adjust position as needed
@@ -162,7 +162,7 @@ try:
             filename = video_path + f'saved_clip_{timestamp}.avi'
             out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
             for index, frame in enumerate(buffer):
-                if index < frame_rate * 5:  # for the first 3 seconds
+                if index < frame_rate * 10:  # for the first 3 seconds
                     frame = put_text(frame)
                 out_clip.write(frame)
             out_clip.release()
