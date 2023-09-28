@@ -13,6 +13,7 @@ frame_height = int(cap.get(4))
 frame_rate = 20.0  # frames per second
 duration = 30  # duration to save in seconds
 
+
 # Define a deque to hold the last 'duration' seconds of frames
 buffer = deque(maxlen=int(frame_rate) * duration)
 
