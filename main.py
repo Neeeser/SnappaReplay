@@ -1,8 +1,11 @@
 import os
-
+import numpy as np
 import cv2
 import time
 from collections import deque
+from multiprocessing import Process
+
+
 
 # Path where videos are stored
 root_video_path = 'videos/'
@@ -40,6 +43,30 @@ buffer = deque(maxlen=int(frame_rate) * duration)
 # Define the video writer for the full game
 out_full = cv2.VideoWriter(full_video_name, fourcc, frame_rate, (frame_width, frame_height))
 
+def save_video(buffer, filename):
+    out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
+    for frame in buffer:
+        out_clip.write(frame)
+    out_clip.release()
+    print(f"Saved to {filename}")
+
+def overlay_transition(frame, gradient_img, alpha):
+    return cv2.addWeighted(gradient_img, alpha, frame, 1 - alpha, 0)
+
+
+def create_gradient_image(width, height):
+    # Define the start and end colors (red and gold in BGR format)
+    start_color = [0, 0, 255]  # red
+    end_color = [0, 215, 255]  # gold
+
+    # Create a gradient image
+    gradient_img = np.zeros((height, width, 3), dtype=np.uint8)
+    for i in range(width):
+        alpha = i / width
+        color = [int((1 - alpha) * start + alpha * end) for start, end in zip(start_color, end_color)]
+        gradient_img[:, i] = color
+
+    return gradient_img
 
 def detect_dice(frame):
     # Convert the frame to grayscale
@@ -108,7 +135,7 @@ def draw_scoreboard(frame, score_left, score_right, elapsed_time):
 
 def put_text(frame):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    text = "FUCK U"
+    text = "Replay"
     color = (0, 0, 255)  # Red
     thickness = 2
     x = int(frame_width/2) - 200  # Adjust position as needed
@@ -124,76 +151,85 @@ def put_text(frame):
     return frame
 
 
-print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
-start_time = time.time()
-score_left = 0  # Replace with the actual score
-score_right = 0  # Replace with the actual score
-try:
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame")
-            break
 
-        # Draw the scoreboard
-        elapsed_time_sec = int(time.time() - start_time)
-        elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
+def main():
+    print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
+    start_time = time.time()
+    score_left = 0  # Replace with the actual score
+    score_right = 0  # Replace with the actual score
+    gradient_img = create_gradient_image(frame_width, frame_height)
 
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
 
-        #frame = detect_dice(frame)
-        frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
-
-        # # Save to full game video
-        # out_full.write(frame)
-
-        # Save to buffer
-        buffer.append(frame)
-
-        # Show the frame (optional)
-        cv2.imshow('Frame', frame)
-
-        key = cv2.waitKey(1) & 0xFF
-
-        # Check for quit command
-        if key == ord('q'):
-            break
-        elif key == ord('s'):
-            # Prepare filename and output writer but do not write yet
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
-            filename = video_path + f'saved_clip_{timestamp}.avi'
-
-            # Replay the frames in the buffer
-            for index, frame in enumerate(buffer):
-                if index < frame_rate * 3:  # for the first 3 seconds
-                    frame = put_text(frame)
-                cv2.imshow('Frame', frame)
-                if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
-                    break
-
-            # Save the clip after playback
-            out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
-            for frame in buffer:
-                out_clip.write(frame)
-            out_clip.release()
-            print(f"Saved the last {duration} seconds to {filename}")
-
-            # Clear the buffer
-            buffer.clear()
+            # Draw the scoreboard
+            elapsed_time_sec = int(time.time() - start_time)
+            elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
 
-        elif key == ord('1'):
-            score_left += 1
-        elif key == ord('2'):
-            score_right += 1
+            #frame = detect_dice(frame)
+            frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
 
-        # If not in replay mode, write the frame to full_game.avi
-        else:
-            out_full.write(frame)
+            # # Save to full game video
+            # out_full.write(frame)
 
-finally:
-    # Release resources
-    cap.release()
-    out_full.release()
-    cv2.destroyAllWindows()
+            # Save to buffer
+            buffer.append(frame)
 
-print("Recording stopped.")
+            # Show the frame (optional)
+            cv2.imshow('Frame', frame)
+
+            key = cv2.waitKey(1) & 0xFF
+
+            # Check for quit command
+            if key == ord('q'):
+                break
+            elif key == ord('s'):
+                timestamp = time.strftime("%Y%m%d-%H%M%S")
+                filename = video_path + f'saved_clip_{timestamp}.avi'
+                p = Process(target=save_video, args=(list(buffer), filename,))
+                p.start()
+
+                # Define the number of frames for the transition
+                num_transition_frames = 60  # Adjust as needed
+
+                # Replay the frames in the buffer with the transition
+                for index, frame in enumerate(buffer):
+                    if index < num_transition_frames:  # Transition period
+                        alpha = 1 - (index / num_transition_frames)  # This line is modified to go from 1 to 0
+                        frame = overlay_transition(frame, gradient_img, alpha)
+                    elif index > num_transition_frames:  # for the first 3 seconds post-transition
+                        frame = put_text(frame)
+
+                    cv2.imshow('Frame', frame)
+                    if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
+                        break
+
+                p.join()
+                buffer.clear()
+
+
+            elif key == ord('1'):
+                score_left += 1
+            elif key == ord('2'):
+                score_right += 1
+
+            # If not in replay mode, write the frame to full_game.avi
+            else:
+                out_full.write(frame)
+
+    finally:
+        # Release resources
+        cap.release()
+        out_full.release()
+        cv2.destroyAllWindows()
+
+    print("Recording stopped.")
+
+
+if __name__ == "__main__":
+    main()
