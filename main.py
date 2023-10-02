@@ -151,6 +151,51 @@ def put_text(frame):
     return frame
 
 
+def overlay_image(frame, overlay, position=(0, 0), scale=1):
+    # Resize overlay image
+    overlay = cv2.resize(overlay, (0, 0), fx=scale, fy=scale)
+
+    # Get the region of interest (ROI) in the frame
+    h, w, _ = overlay.shape
+    x, y = position
+    roi = frame[y:y + h, x:x + w]
+
+    # Extract the alpha channel from the overlay image and create an inverse alpha mask
+    alpha = overlay[:, :, 3] / 255.0
+    inverse_alpha = 1.0 - alpha
+
+    # Blend the overlay image with the ROI based on the alpha channel
+    for c in range(0, 3):
+        roi[:, :, c] = (alpha * overlay[:, :, c] + inverse_alpha * roi[:, :, c])
+
+    return frame
+
+
+def overlay_replay_banner(frame):
+    # Define properties of the replay banner
+    overlay_path = "imgs/ReplayOverlay.png"
+    scale = 1 # Adjust scale as needed
+
+    # Load the overlay image to get its dimensions after scaling
+    overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
+    overlay = cv2.resize(overlay, (0, 0), fx=scale, fy=scale)
+    overlay_height, overlay_width, _ = overlay.shape
+    print(overlay_width, overlay_height)
+    # Get the frame dimensions
+    frame_height, frame_width, _ = frame.shape
+
+    # Calculate the position to center the overlay on the frame
+    x = (frame_width - overlay_width) // 2
+    y = (frame_height - overlay_height) // 8
+
+    position = (x, y)
+
+    # Overlay the replay banner on the frame
+    frame = overlay_image(frame, overlay, position, scale)
+
+
+    return frame
+
 
 def main():
     print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
@@ -202,8 +247,10 @@ def main():
                     if index < num_transition_frames:  # Transition period
                         alpha = 1 - (index / num_transition_frames)  # This line is modified to go from 1 to 0
                         frame = overlay_transition(frame, gradient_img, alpha)
-                    elif index > num_transition_frames:  # for the first 3 seconds post-transition
+
+                    if index >= num_transition_frames / 2 :  # for the first 3 seconds post-transition
                         frame = put_text(frame)
+                        frame = overlay_replay_banner(frame)
 
                     cv2.imshow('Frame', frame)
                     if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
