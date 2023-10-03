@@ -21,8 +21,13 @@ if not os.path.exists(video_path):
     os.makedirs(video_path)
 
 
+
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
 
 if not cap.isOpened():
     print("Error: Could not open camera.")
@@ -94,44 +99,89 @@ def detect_dice(frame):
     return frame
 
 
-def draw_scoreboard(frame, score_left, score_right, elapsed_time):
+def draw_scoreboard(frame, team_info, elapsed_time):
     h, w, _ = frame.shape
 
     # Flips the frame horizontally
     frame = cv2.flip(frame, 1)
 
     # Define properties of the scoreboard
-    height = 80  # Height of the scoreboard
-    color = (42, 50, 155)  # Color for the scoreboard
-    alpha = 0.7  # Transparency factor [0, 1] where 0 is completely transparent and 1 is completely opaque
+    height = frame_height // 8
+    color = (42, 50, 155)
+    alpha = 0.7
 
-    # Create a copy of the original frame
+    # Create an overlay
     overlay = frame.copy()
 
-    # Draw the transparent rectangle on the copy of the original frame
+    # Draw a rectangle for the scoreboard
     cv2.rectangle(overlay, (0, h - height), (w, h), color, -1)
-
-    # Blend the original frame with the overlay using alpha
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
-    # Define font and scale
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 2
-    font_color = (58, 224, 168)  # Color for the text
-    font_thickness = 2
+    # Calculate font scale based on rectangle height
+    num_lines = 3
+    max_line_height = height / (num_lines + 1)  # +1 for some spacing
+    font_scale = max_line_height / 25  # Adjust the denominator (25 in this case) based on how the text looks
 
-    # Position the scores on the scoreboard
-    left_score_position = (int(w * 0.15 - font_scale * 10), h - int(height * 0.5 - font_scale * 10))
-    right_score_position = (int(w * 0.85 + font_scale * 10), h - int(height * 0.5 - font_scale * 10))
-    time_position = (int(w * 0.5 - font_scale * 10), h - int(height * 0.5 - font_scale * 10))
+    # Add more space between lines
+    spacing_factor = 1.2
+    max_line_height *= spacing_factor  # Increase space between lines
 
-    # Put the scores and elapsed time on the scoreboard
-    cv2.putText(frame, str(score_left), left_score_position, font, font_scale, font_color, font_thickness, cv2.LINE_AA)
-    cv2.putText(frame, str(score_right), right_score_position, font, font_scale, font_color, font_thickness,
-                cv2.LINE_AA)
-    cv2.putText(frame, elapsed_time, time_position, font, font_scale, font_color, font_thickness, cv2.LINE_AA)
+
+    # Define font and colors
+    font = cv2.FONT_HERSHEY_COMPLEX
+    header_color = (255, 255, 255)
+    text_color = (58, 224, 168)
+    font_thickness = int(frame_width * 0.001)
+
+    # Calculate positions
+    left_position = int(w * 0.01)
+    right_position = int(w * 0.55)
+    vertical_position = h - height + int(max_line_height)  # Starting at the first line
+
+
+    # Draw Team's info for both teams
+    for team, data in team_info.items():
+        # Team's Name and Points
+        team_text = f"{data['TeamName']} - {data['TeamPoints']} Points"
+
+        if team == 'Team1':
+            position = left_position
+        else:
+            text_width, _ = cv2.getTextSize(team_text, font, font_scale, font_thickness)[0]
+            position = w - int(w * 0.01) - text_width
+
+        cv2.putText(frame, team_text, (position, vertical_position), font, font_scale, header_color, font_thickness,
+                    cv2.LINE_AA)
+        vertical_position += int(max_line_height)
+
+        # Draw Players' stats
+        for player in ['PlayerOne', 'PlayerTwo']:
+            player_info = data[player]
+            player_text = f"{player_info['PlayerName']} - H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
+
+            if team == 'Team1':
+                position = left_position
+            else:
+                text_width, _ = cv2.getTextSize(player_text, font, font_scale, font_thickness)[0]
+                position = w - int(w * 0.01) - text_width
+
+            cv2.putText(frame, player_text, (position, vertical_position), font, font_scale, text_color, font_thickness,
+                        cv2.LINE_AA)
+            vertical_position += int(max_line_height)
+
+        # Reset vertical position for the second team
+        vertical_position = h - height + int(max_line_height)
+
+    # ...
+
+    # Display elapsed time at the bottom center
+    time_position = (w // 2 - int(frame_width * 0.05), h - int(frame_height * 0.01))
+    cv2.putText(frame, elapsed_time, time_position, font, font_scale, header_color, font_thickness, cv2.LINE_AA)
 
     return frame
+
+
+
 
 
 def put_text(frame):
@@ -204,6 +254,21 @@ def overlay_replay_banner(frame, overlay_width_percentage=0.3):
     return frame
 
 
+team_info = {
+                'Team1': {
+                    'TeamName': "Shipyardigans",
+                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 1, 'Misses': 2, 'Sinks': 1, 'Drops': 1},
+                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 3, 'Sinks': 2, 'Drops': 2},
+                    'TeamPoints': 2
+                },
+                'Team2': {
+                    'TeamName': "Team B",
+                    'PlayerOne': {'PlayerName': "John", 'Hits': 2, 'Misses': 1, 'Sinks': 2, 'Drops': 2},
+                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 2, 'Misses': 3, 'Sinks': 1, 'Drops': 0},
+                    'TeamPoints': 3
+                }
+            }
+
 def main():
     print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
     start_time = time.time()
@@ -223,9 +288,10 @@ def main():
             elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
 
-            #frame = detect_dice(frame)
-            frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
 
+            #frame = detect_dice(frame)
+            #frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
+            frame = draw_scoreboard(frame, team_info, elapsed_time)
             # # Save to full game video
             # out_full.write(frame)
 
@@ -267,9 +333,11 @@ def main():
 
 
             elif key == ord('1'):
+                team_info['Team1']['TeamPoints'] += 1
                 score_left += 1
             elif key == ord('2'):
                 score_right += 1
+                team_info['Team2']['TeamPoints'] += 1
 
             # If not in replay mode, write the frame to full_game.avi
             else:
