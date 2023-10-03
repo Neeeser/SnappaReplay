@@ -31,6 +31,7 @@ if not cap.isOpened():
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 frame_width = int(cap.get(3))
 frame_height = int(cap.get(4))
+print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
 frame_rate = 20.0  # frames per second
@@ -171,28 +172,34 @@ def overlay_image(frame, overlay, position=(0, 0), scale=1):
     return frame
 
 
-def overlay_replay_banner(frame):
+def overlay_replay_banner(frame, overlay_width_percentage=0.3):
     # Define properties of the replay banner
     overlay_path = "imgs/ReplayOverlay.png"
-    scale = 1 # Adjust scale as needed
 
-    # Load the overlay image to get its dimensions after scaling
+    # Desired width of the overlay as a percentage of frame's width
+    desired_width = int(frame_width * overlay_width_percentage)
+
+    # Load the overlay image
     overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
+    original_height, original_width, _ = overlay.shape
+
+    # Calculate the scale factor
+    scale = desired_width / original_width
+
+    # Resize the overlay image
     overlay = cv2.resize(overlay, (0, 0), fx=scale, fy=scale)
     overlay_height, overlay_width, _ = overlay.shape
-    print(overlay_width, overlay_height)
-    # Get the frame dimensions
-    frame_height, frame_width, _ = frame.shape
+
 
     # Calculate the position to center the overlay on the frame
-    x = (frame_width - overlay_width) // 2
-    y = (frame_height - overlay_height) // 8
+    x = int((frame_width - overlay_width) / 2)  # Used float division here and then converted to int
+    #y = int((frame_height - overlay_height) / 10)  # Adjust the denominator as needed
+    y = 0
 
     position = (x, y)
 
     # Overlay the replay banner on the frame
-    frame = overlay_image(frame, overlay, position, scale)
-
+    frame = overlay_image(frame, overlay, position)
 
     return frame
 
@@ -249,7 +256,6 @@ def main():
                         frame = overlay_transition(frame, gradient_img, alpha)
 
                     if index >= num_transition_frames / 2 :  # for the first 3 seconds post-transition
-                        frame = put_text(frame)
                         frame = overlay_replay_banner(frame)
 
                     cv2.imshow('Frame', frame)
@@ -269,6 +275,9 @@ def main():
             else:
                 out_full.write(frame)
 
+    # Make it except for keyboard interrupt
+    except KeyboardInterrupt:
+        pass
     finally:
         # Release resources
         cap.release()
