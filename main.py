@@ -6,6 +6,33 @@ from collections import deque
 from multiprocessing import Process
 
 
+## Define keyboard Macros
+TEAM1_PLAYER1_HIT = 'w'
+TEAM1_PLAYER1_SINK = 'e'
+TEAM1_PLAYER1_MISS = 'r'
+TEAM1_PLAYER1_DROP = 't'
+q
+TEAM1_PLAYER2_HIT = 'z'
+TEAM1_PLAYER2_SINK = 'x'
+TEAM1_PLAYER2_MISS = 'c'
+TEAM1_PLAYER2_DROP = 'v'
+
+TEAM2_PLAYER1_HIT = 'u'
+TEAM2_PLAYER1_SINK = 'i'
+TEAM2_PLAYER1_MISS = 'o'
+TEAM2_PLAYER1_DROP = 'p'
+
+TEAM2_PLAYER2_HIT = 'n'
+TEAM2_PLAYER2_SINK = 'm'
+TEAM2_PLAYER2_MISS = ','
+TEAM2_PLAYER2_DROP = '.'
+
+
+def update_score(team_info):
+    # loop through the teams and update team points based on these rules one 1 is +1 points 1 sink is +1 points
+    for team in team_info:
+        team_info[team]['TeamPoints'] = team_info[team]['PlayerOne']['Hits'] + team_info[team]['PlayerOne']['Sinks'] + team_info[team]['PlayerTwo']['Hits'] + team_info[team]['PlayerTwo']['Sinks']
+
 
 # Path where videos are stored
 root_video_path = 'videos/'
@@ -40,7 +67,7 @@ print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
 frame_rate = 20.0  # frames per second
-duration = 30  # duration to save in seconds
+duration = 15  # duration to save in seconds
 frame_display_time = int(1000 / frame_rate)
 
 # Define a deque to hold the last 'duration' seconds of frames
@@ -289,8 +316,8 @@ def main():
 
 
 
-            #frame = detect_dice(frame)
-            #frame = draw_scoreboard(frame, score_left, score_right, elapsed_time)
+
+            update_score(team_info)
             frame = draw_scoreboard(frame, team_info, elapsed_time)
             # # Save to full game video
             # out_full.write(frame)
@@ -332,12 +359,31 @@ def main():
                 buffer.clear()
 
 
-            elif key == ord('1'):
-                team_info['Team1']['TeamPoints'] += 1
-                score_left += 1
-            elif key == ord('2'):
-                score_right += 1
-                team_info['Team2']['TeamPoints'] += 1
+            elif key == ord(TEAM1_PLAYER1_HIT):
+                team_info['Team1']['PlayerOne']["Hits"] += 1
+
+            elif key == ord(TEAM1_PLAYER1_MISS):
+                team_info['Team1']['PlayerOne']["Misses"] += 1
+
+            elif key == ord(TEAM1_PLAYER1_SINK):
+                team_info['Team1']['PlayerOne']["Sinks"] += 1
+
+            elif key == ord(TEAM1_PLAYER1_DROP):
+                team_info['Team1']['PlayerOne']["Drops"] += 1
+
+            elif key == ord(TEAM1_PLAYER2_HIT):
+                team_info['Team1']['PlayerTwo']["Hits"] += 1
+
+            elif key == ord(TEAM1_PLAYER2_MISS):
+                team_info['Team1']['PlayerTwo']["Misses"] += 1
+
+            elif key == ord(TEAM1_PLAYER2_SINK):
+                team_info['Team1']['PlayerTwo']["Sinks"] += 1
+
+            elif key == ord(TEAM1_PLAYER2_DROP):
+                team_info['Team1']['PlayerTwo']["Drops"] += 1
+
+
 
             # If not in replay mode, write the frame to full_game.avi
             else:
