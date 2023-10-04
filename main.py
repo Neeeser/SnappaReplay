@@ -89,9 +89,9 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-# cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
-# cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-#
+cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 
 # cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
 # cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
