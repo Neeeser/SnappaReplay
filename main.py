@@ -79,9 +79,10 @@ if not os.path.exists(video_path):
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
 
+desired_frame_rate = 30  # frames per secondq
 
 
-cap.set(cv2.CAP_PROP_FPS, 15)  # Set an extremely high value
+cap.set(cv2.CAP_PROP_FPS, desired_frame_rate)  # Set an extremely high value
 
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -107,7 +108,6 @@ frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
-#frame_rate = 60.0  # frames per secondq
 duration = 15  # duration to save in seconds
 
 actual_fps = cap.get(cv2.CAP_PROP_FPS)
