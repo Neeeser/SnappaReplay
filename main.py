@@ -57,6 +57,8 @@ def update_score(team_info):
     # loop through the teams and update team points based on these rules one 1 is +1 points 1 sink is +1 points
     for team in team_info:
         team_info[team]['TeamPoints'] = team_info[team]['PlayerOne']['Hits'] + team_info[team]['PlayerOne']['Sinks'] + team_info[team]['PlayerTwo']['Hits'] + team_info[team]['PlayerTwo']['Sinks']
+        team_info[team]['PlayerOne']['Stats'] = team_info[team]['PlayerOne']['Hits'] + (team_info[team]['PlayerOne']['Sinks']*3) - (team_info[team]['PlayerOne']['Misses']/2) - team_info[team]['PlayerOne']['Drops']
+        team_info[team]['PlayerTwo']['Stats'] = team_info[team]['PlayerOne']['Hits'] + (team_info[team]['PlayerOne']['Sinks']*3) - (team_info[team]['PlayerOne']['Misses']/2) - team_info[team]['PlayerOne']['Drops']
 
 
 # Path where videos are stored
@@ -209,11 +211,12 @@ def draw_scoreboard(frame, team_info, elapsed_time):
         # Draw Players' stats
         for player in ['PlayerOne', 'PlayerTwo']:
             player_info = data[player]
-            player_text = f"{player_info['PlayerName']} - H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
+            formatted_stats = "{:+.2f}".format(player_info["Stats"])  # +5.23
+            player_text = f"{player_info['PlayerName']} | {formatted_stats} H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
 
             if team == 'Team1':
                 position = left_position
-                player_text = f"H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']} - {player_info['PlayerName']}"
+                player_text = f"H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']} {formatted_stats} | {player_info['PlayerName']}"
 
             else:
                 text_width, _ = cv2.getTextSize(player_text, font, font_scale, font_thickness)[0]
@@ -317,14 +320,14 @@ def undo_last_action(action_log):
 team_info = {
                 'Team1': {
                     'TeamName': "Team A",
-                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
-                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 },
                 'Team2': {
                     'TeamName': "Team B",
-                    'PlayerOne': {'PlayerName': "John", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
-                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'PlayerOne': {'PlayerName': "John", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 }
             }
