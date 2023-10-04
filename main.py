@@ -213,6 +213,8 @@ def draw_scoreboard(frame, team_info, elapsed_time):
 
             if team == 'Team1':
                 position = left_position
+                player_text = f"H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']} - {player_info['PlayerName']}"
+
             else:
                 text_width, _ = cv2.getTextSize(player_text, font, font_scale, font_thickness)[0]
                 position = w - int(w * 0.01) - text_width
@@ -314,16 +316,16 @@ def undo_last_action(action_log):
 
 team_info = {
                 'Team1': {
-                    'TeamName': "Shipyardigans",
-                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 1, 'Misses': 2, 'Sinks': 1, 'Drops': 1},
-                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 3, 'Sinks': 2, 'Drops': 2},
-                    'TeamPoints': 2
+                    'TeamName': "Team A",
+                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'TeamPoints': 0
                 },
                 'Team2': {
                     'TeamName': "Team B",
-                    'PlayerOne': {'PlayerName': "John", 'Hits': 2, 'Misses': 1, 'Sinks': 2, 'Drops': 2},
-                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 2, 'Misses': 3, 'Sinks': 1, 'Drops': 0},
-                    'TeamPoints': 3
+                    'PlayerOne': {'PlayerName': "John", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0},
+                    'TeamPoints': 0
                 }
             }
 
