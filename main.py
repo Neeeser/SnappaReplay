@@ -81,6 +81,9 @@ if not os.path.exists(video_path):
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
 
+cap.set(cv2.CAP_PROP_FPS, 1000)  # Set an extremely high value
+
+
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
@@ -90,8 +93,8 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 # cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 #
 
-cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
-cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+# cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
+# cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 
 if not cap.isOpened():
@@ -108,6 +111,11 @@ frame_rate = 60.0  # frames per secondq
 duration = 15  # duration to save in seconds
 frame_display_time = int(1000 / frame_rate)
 
+actual_fps = cap.get(cv2.CAP_PROP_FPS)
+frame_rate = actual_fps
+
+cap.set(cv2.CAP_PROP_FPS, frame_rate)
+
 # Define a deque to hold the last 'duration' seconds of frames
 buffer = deque(maxlen=int(frame_rate) * duration)
 
@@ -115,9 +123,12 @@ buffer = deque(maxlen=int(frame_rate) * duration)
 out_full = cv2.VideoWriter(full_video_name, fourcc, frame_rate, (frame_width, frame_height))
 
 def save_video(buffer, filename):
+    print(len(buffer)/frame_rate)
     out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
     for frame in buffer:
         out_clip.write(frame)
+
+
     out_clip.release()
     print(f"Saved to {filename}")
 
@@ -359,7 +370,8 @@ def main():
             elapsed_time_sec = int(time.time() - start_time)
             elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
-
+            actual_frame_rate = cap.get(cv2.CAP_PROP_FPS)
+            print(f"Actual capture frame rate: {actual_frame_rate}")
 
 
             update_score(team_info)
@@ -398,7 +410,9 @@ def main():
                         frame = overlay_replay_banner(frame)
 
                     cv2.imshow('Frame', frame)
-                    if cv2.waitKey(int(1000 / frame_rate)) & 0xFF == ord('q'):
+                    duration = int(1000 / frame_rate)
+                    #print(duration)  # Debugging
+                    if cv2.waitKey(duration) & 0xFF == ord('q'):
                         break
 
                 p.join()
