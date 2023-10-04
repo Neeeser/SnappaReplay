@@ -76,26 +76,27 @@ if not os.path.exists(root_video_path):
 if not os.path.exists(video_path):
     os.makedirs(video_path)
 
+
+
 # Initialize the camera
-cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+#cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+stream_url = "rtsp://admin:4647@andrew.local:8554/live"
+cap = cv2.VideoCapture(stream_url)
 
-desired_frame_rate = 30  # frames per secondq
+desired_frame_rate = 60  # frames per secondq
 
 
-cap.set(cv2.CAP_PROP_FPS, desired_frame_rate)  # Set an extremely high value
+#cap.set(cv2.CAP_PROP_FPS, desired_frame_rate)  # Set an extremely high value
 
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
-cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
-
-# cv2.namedWindow('Frame', cv2.WINDOW_NORMAL)
+# cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
 # cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 
 
 if not cap.isOpened():
@@ -103,6 +104,7 @@ if not cap.isOpened():
     exit()
 
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
 frame_width = int(cap.get(3))
 frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
@@ -115,7 +117,7 @@ frame_rate = actual_fps
 frame_display_time = int(1000 / frame_rate)
 
 
-cap.set(cv2.CAP_PROP_FPS, frame_rate)
+#cap.set(cv2.CAP_PROP_FPS, frame_rate)
 
 # Define a deque to hold the last 'duration' seconds of frames
 buffer = deque(maxlen=int(frame_rate) * duration)
@@ -362,7 +364,9 @@ def main():
     action_log = []
     try:
         while True:
+
             ret, frame = cap.read()
+
             if not ret:
                 print("Failed to grab frame")
                 break
@@ -372,7 +376,7 @@ def main():
             elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
             actual_frame_rate = cap.get(cv2.CAP_PROP_FPS)
-            print(f"Actual capture frame rate: {actual_frame_rate}")
+            #print(f"Actual capture frame rate: {actual_frame_rate}")
 
 
             update_score(team_info)
@@ -415,8 +419,8 @@ def main():
                     #print(duration)  # Debugging
                     if cv2.waitKey(duration) & 0xFF == ord('q'):
                         break
-
                 p.join()
+
                 buffer.clear()
 
 
