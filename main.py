@@ -81,7 +81,7 @@ cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multip
 
 
 
-cap.set(cv2.CAP_PROP_FPS, 1000)  # Set an extremely high value
+cap.set(cv2.CAP_PROP_FPS, 30)  # Set an extremely high value
 
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
