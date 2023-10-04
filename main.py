@@ -86,6 +86,9 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
+cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 
 if not cap.isOpened():
     print("Error: Could not open camera.")
@@ -97,7 +100,7 @@ frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
-frame_rate = 20.0  # frames per second
+frame_rate = 20.0  # frames per secondq
 duration = 15  # duration to save in seconds
 frame_display_time = int(1000 / frame_rate)
 
@@ -240,9 +243,6 @@ def draw_scoreboard(frame, team_info, elapsed_time):
     cv2.putText(frame, elapsed_time, time_position, font, font_scale, header_color, font_thickness, cv2.LINE_AA)
 
     return frame
-
-
-
 
 
 def put_text(frame):
