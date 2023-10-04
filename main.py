@@ -4,7 +4,7 @@ import cv2
 import time
 from collections import deque
 from multiprocessing import Process
-
+from tools import save_video
 
 ## Define keyboard Macros
 TEAM1_PLAYER1_HIT = 'w'
@@ -79,11 +79,20 @@ if not os.path.exists(video_path):
 
 
 # Initialize the camera
-#cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
-stream_url = "rtsp://admin:4647@andrew.local:8554/live"
-cap = cv2.VideoCapture(stream_url)
+# cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+while True:
+    try:
+        #stream_url = "rtsp://admin:4647@andrew.local:8554/live"
+        stream_url = "http://admin:4647@andrew.local:8081/video"
+        cap = cv2.VideoCapture(stream_url)
+        if cap.isOpened():
+            break
+    except (cv2.error, ValueError) as e:
+        print("Error: Could not open camera.")
+        time.sleep(1)
 
-desired_frame_rate = 60  # frames per secondq
+
+#desired_frame_rate = 60  # frames per second
 
 
 #cap.set(cv2.CAP_PROP_FPS, desired_frame_rate)  # Set an extremely high value
@@ -125,15 +134,15 @@ buffer = deque(maxlen=int(frame_rate) * duration)
 # Define the video writer for the full game
 out_full = cv2.VideoWriter(full_video_name, fourcc, frame_rate, (frame_width, frame_height))
 
-def save_video(buffer, filename):
-    print(len(buffer)/frame_rate)
-    out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
-    for frame in buffer:
-        out_clip.write(frame)
-
-
-    out_clip.release()
-    print(f"Saved to {filename}")
+# def save_video(buffer, filename):
+#     print(len(buffer)/frame_rate)
+#     out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
+#     for frame in buffer:
+#         out_clip.write(frame)
+#
+#
+#     out_clip.release()
+#     print(f"Saved to {filename}")
 
 def overlay_transition(frame, gradient_img, alpha):
     return cv2.addWeighted(gradient_img, alpha, frame, 1 - alpha, 0)
@@ -364,7 +373,9 @@ def main():
     action_log = []
     try:
         while True:
-
+            if not cap.isOpened():
+                print("Capture not opened")
+                cap.open(stream_url)
             ret, frame = cap.read()
 
             if not ret:
@@ -375,8 +386,6 @@ def main():
             elapsed_time_sec = int(time.time() - start_time)
             elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
-            actual_frame_rate = cap.get(cv2.CAP_PROP_FPS)
-            #print(f"Actual capture frame rate: {actual_frame_rate}")
 
 
             update_score(team_info)
@@ -399,32 +408,45 @@ def main():
             elif key == ord('s'):
                 timestamp = time.strftime("%Y%m%d-%H%M%S")
                 filename = video_path + f'saved_clip_{timestamp}.avi'
-                p = Process(target=save_video, args=(list(buffer), filename,))
-                p.start()
+                # p = Process(target=save_video, args=(list(buffer), filename,frame_rate, frame_width, frame_height,))
+                # p.start()
+                #out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
 
                 # Define the number of frames for the transition
                 num_transition_frames = 60  # Adjust as needed
 
                 # Replay the frames in the buffer with the transition
                 for index, frame in enumerate(buffer):
+
+                    _, _ = cap.read()  # Read the next frame from the stream
                     if index < num_transition_frames:  # Transition period
                         alpha = 1 - (index / num_transition_frames)  # This line is modified to go from 1 to 0
                         frame = overlay_transition(frame, gradient_img, alpha)
 
-                    if index >= num_transition_frames / 2 :  # for the first 3 seconds post-transition
+                    if index >= num_transition_frames / 2:  # for the first 3 seconds post-transition
                         frame = overlay_replay_banner(frame)
 
+
                     cv2.imshow('Frame', frame)
+                    #out_clip.write(frame)
+
                     duration = int(1000 / frame_rate)
                     #print(duration)  # Debugging
                     if cv2.waitKey(duration) & 0xFF == ord('q'):
                         break
-                p.join()
+
+                save_video(list(buffer), filename,frame_rate, frame_width, frame_height)
+                # p.join()
+                # p.terminate()
 
                 buffer.clear()
+                #out_clip.release()
 
+            # If not in replay mode, write the frame to full_game.avi
+            else:
+                out_full.write(frame)
 
-            elif key == BACKSPACE_KEY_MAC or key == BACKSPACE_KEY:
+            if key == BACKSPACE_KEY_MAC or key == BACKSPACE_KEY:
                 print("undo")
                 undo_last_action(action_log)
 
@@ -441,9 +463,7 @@ def main():
                 # Add to the log
                 action_log.append((team, player, action))
 
-            # If not in replay mode, write the frame to full_game.avi
-            else:
-                out_full.write(frame)
+
 
     # Make it except for keyboard interrupt
     except KeyboardInterrupt:
