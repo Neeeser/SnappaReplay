@@ -314,7 +314,7 @@ def undo_last_action(action_log):
 
 team_info = {
                 'Team1': {
-                    'TeamName': "Shipyardigans",
+                    'TeamName': "Joe Mama",
                     'PlayerOne': {'PlayerName': "Joe", 'Hits': 1, 'Misses': 2, 'Sinks': 1, 'Drops': 1},
                     'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 3, 'Sinks': 2, 'Drops': 2},
                     'TeamPoints': 2
