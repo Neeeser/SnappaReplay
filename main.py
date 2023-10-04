@@ -58,7 +58,7 @@ def update_score(team_info):
     for team in team_info:
         team_info[team]['TeamPoints'] = team_info[team]['PlayerOne']['Hits'] + team_info[team]['PlayerOne']['Sinks'] + team_info[team]['PlayerTwo']['Hits'] + team_info[team]['PlayerTwo']['Sinks']
         team_info[team]['PlayerOne']['Stats'] = team_info[team]['PlayerOne']['Hits'] + (team_info[team]['PlayerOne']['Sinks']*3) - (team_info[team]['PlayerOne']['Misses']/2) - team_info[team]['PlayerOne']['Drops']
-        team_info[team]['PlayerTwo']['Stats'] = team_info[team]['PlayerOne']['Hits'] + (team_info[team]['PlayerOne']['Sinks']*3) - (team_info[team]['PlayerOne']['Misses']/2) - team_info[team]['PlayerOne']['Drops']
+        team_info[team]['PlayerTwo']['Stats'] = team_info[team]['PlayerTwo']['Hits'] + (team_info[team]['PlayerTwo']['Sinks']*3) - (team_info[team]['PlayerTwo']['Misses']/2) - team_info[team]['PlayerTwo']['Drops']
 
 
 # Path where videos are stored
@@ -211,7 +211,7 @@ def draw_scoreboard(frame, team_info, elapsed_time):
         # Draw Players' stats
         for player in ['PlayerOne', 'PlayerTwo']:
             player_info = data[player]
-            formatted_stats = "{:+.2f}".format(player_info["Stats"])  # +5.23
+            formatted_stats = "{:+.2f}".format(player_info["Stats"])
             player_text = f"{player_info['PlayerName']} | {formatted_stats} H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
 
             if team == 'Team1':
