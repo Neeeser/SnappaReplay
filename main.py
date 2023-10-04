@@ -81,7 +81,7 @@ cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multip
 
 
 
-cap.set(cv2.CAP_PROP_FPS, 30)  # Set an extremely high value
+cap.set(cv2.CAP_PROP_FPS, 15)  # Set an extremely high value
 
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -107,12 +107,13 @@ frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
-frame_rate = 60.0  # frames per secondq
+#frame_rate = 60.0  # frames per secondq
 duration = 15  # duration to save in seconds
-frame_display_time = int(1000 / frame_rate)
 
 actual_fps = cap.get(cv2.CAP_PROP_FPS)
 frame_rate = actual_fps
+frame_display_time = int(1000 / frame_rate)
+
 
 cap.set(cv2.CAP_PROP_FPS, frame_rate)
 
