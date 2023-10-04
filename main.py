@@ -30,6 +30,8 @@ TEAM2_PLAYER2_DROP = '.'
 BACKSPACE_KEY = ord('\x08')  # or simply 8
 BACKSPACE_KEY_MAC = 127
 
+
+
 # Define the key mappings
 ACTIONS = {
     ord('w'): {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Hits'},
@@ -81,6 +83,8 @@ cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multip
 
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 
 if not cap.isOpened():
