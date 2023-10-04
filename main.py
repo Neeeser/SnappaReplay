@@ -81,10 +81,10 @@ if not os.path.exists(video_path):
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
 
-# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
 # cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
