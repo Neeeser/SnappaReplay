@@ -104,7 +104,7 @@ frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
-frame_rate = 20.0  # frames per secondq
+frame_rate = 60.0  # frames per secondq
 duration = 15  # duration to save in seconds
 frame_display_time = int(1000 / frame_rate)
 
