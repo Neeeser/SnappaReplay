@@ -93,9 +93,8 @@ def detect_camera():
     return f"/dev/{video_devices[0]}"
 
 
-camera_path = detect_camera()
-cap = cv2.VideoCapture(camera_path, cv2.CAP_FFMPEG)
-
+#camera_path = detect_camera()
+cap = cv2.VideoCapture("/dev/video0 cv2.CAP_FFMPEG)
 
 # Initialize the camera
 #cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
