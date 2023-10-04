@@ -78,8 +78,29 @@ if not os.path.exists(video_path):
 
 
 
+def detect_camera():
+    # List all devices in /dev/
+    devices = os.listdir('/dev/')
+
+    # Filter out everything that doesn't start with 'video'
+    video_devices = [device for device in devices if device.startswith('video')]
+
+    if not video_devices:
+        raise Exception("No video devices detected!")
+
+    print(f"/dev/{video_devices[0]}")
+    # Return the first video device
+    return f"/dev/{video_devices[0]}"
+
+
+camera_path = detect_camera()
+cap = cv2.VideoCapture(camera_path, cv2.CAP_FFMPEG)
+
+
 # Initialize the camera
-cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+#cap = cv2.VideoCapture(0)  # 0 for the default camera, change if you have multiple cameras
+
+
 
 cap.set(cv2.CAP_PROP_FPS, 1000)  # Set an extremely high value
 
