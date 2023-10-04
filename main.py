@@ -27,6 +27,31 @@ TEAM2_PLAYER2_SINK = 'm'
 TEAM2_PLAYER2_MISS = ','
 TEAM2_PLAYER2_DROP = '.'
 
+BACKSPACE_KEY = ord('\x08')  # or simply 8
+BACKSPACE_KEY_MAC = 127
+
+# Define the key mappings
+ACTIONS = {
+    ord('w'): {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Hits'},
+    ord('e'): {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Sinks'},
+    ord('r'): {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Misses'},
+    ord('t'): {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Drops'},
+
+    ord('z'): {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Hits'},
+    ord('x'): {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Sinks'},
+    ord('c'): {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Misses'},
+    ord('v'): {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Drops'},
+
+    ord('u'): {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Hits'},
+    ord('i'): {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Sinks'},
+    ord('o'): {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Misses'},
+    ord('p'): {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Drops'},
+
+    ord('n'): {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Hits'},
+    ord('m'): {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Sinks'},
+    ord(','): {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Misses'},
+    ord('.'): {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Drops'}
+}
 
 def update_score(team_info):
     # loop through the teams and update team points based on these rules one 1 is +1 points 1 sink is +1 points
@@ -280,6 +305,12 @@ def overlay_replay_banner(frame, overlay_width_percentage=0.3):
 
     return frame
 
+def undo_last_action(action_log):
+    if action_log:
+        last_action = action_log.pop()  # Get the last action
+        team, player, action = last_action
+        team_info[team][player][action] -= 1  # Decrement the respective action for the player
+
 
 team_info = {
                 'Team1': {
@@ -302,7 +333,8 @@ def main():
     score_left = 0  # Replace with the actual score
     score_right = 0  # Replace with the actual score
     gradient_img = create_gradient_image(frame_width, frame_height)
-
+    # Log of all actions for undo functionality
+    action_log = []
     try:
         while True:
             ret, frame = cap.read()
@@ -329,6 +361,7 @@ def main():
             cv2.imshow('Frame', frame)
 
             key = cv2.waitKey(1) & 0xFF
+
 
             # Check for quit command
             if key == ord('q'):
@@ -359,31 +392,22 @@ def main():
                 buffer.clear()
 
 
-            elif key == ord(TEAM1_PLAYER1_HIT):
-                team_info['Team1']['PlayerOne']["Hits"] += 1
+            elif key == BACKSPACE_KEY_MAC or key == BACKSPACE_KEY:
+                print("undo")
+                undo_last_action(action_log)
 
-            elif key == ord(TEAM1_PLAYER1_MISS):
-                team_info['Team1']['PlayerOne']["Misses"] += 1
+            # Check for key press
+            elif key in ACTIONS:
+                current_action = ACTIONS[key]
+                team = current_action['team']
+                player = current_action['player']
+                action = current_action['action']
 
-            elif key == ord(TEAM1_PLAYER1_SINK):
-                team_info['Team1']['PlayerOne']["Sinks"] += 1
+                # Increment the respective action for the player
+                team_info[team][player][action] += 1
 
-            elif key == ord(TEAM1_PLAYER1_DROP):
-                team_info['Team1']['PlayerOne']["Drops"] += 1
-
-            elif key == ord(TEAM1_PLAYER2_HIT):
-                team_info['Team1']['PlayerTwo']["Hits"] += 1
-
-            elif key == ord(TEAM1_PLAYER2_MISS):
-                team_info['Team1']['PlayerTwo']["Misses"] += 1
-
-            elif key == ord(TEAM1_PLAYER2_SINK):
-                team_info['Team1']['PlayerTwo']["Sinks"] += 1
-
-            elif key == ord(TEAM1_PLAYER2_DROP):
-                team_info['Team1']['PlayerTwo']["Drops"] += 1
-
-
+                # Add to the log
+                action_log.append((team, player, action))
 
             # If not in replay mode, write the frame to full_game.avi
             else:
