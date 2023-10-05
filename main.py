@@ -4,7 +4,7 @@ import cv2
 import time
 from collections import deque
 from multiprocessing import Process
-from tools import save_video
+#from tools import save_video
 
 ## Define keyboard Macros
 TEAM1_PLAYER1_HIT = 'w'
@@ -135,15 +135,15 @@ buffer = deque(maxlen=int(frame_rate) * duration)
 # Define the video writer for the full game
 out_full = cv2.VideoWriter(full_video_name, fourcc, frame_rate, (frame_width, frame_height))
 
-# def save_video(buffer, filename):
-#     print(len(buffer)/frame_rate)
-#     out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
-#     for frame in buffer:
-#         out_clip.write(frame)
-#
-#
-#     out_clip.release()
-#     print(f"Saved to {filename}")
+def save_video(buffer, filename):
+    print(len(buffer)/frame_rate)
+    out_clip = cv2.VideoWriter(filename, fourcc, frame_rate, (frame_width, frame_height))
+    for frame in buffer:
+        out_clip.write(frame)
+
+
+    out_clip.release()
+    print(f"Saved to {filename}")
 
 def overlay_transition(frame, gradient_img, alpha):
     return cv2.addWeighted(gradient_img, alpha, frame, 1 - alpha, 0)
@@ -436,7 +436,8 @@ def main():
                     if cv2.waitKey(duration) & 0xFF == ord('q'):
                         break
 
-                save_video(list(buffer), filename,frame_rate, frame_width, frame_height)
+                #save_video(list(buffer), filename,frame_rate, frame_width, frame_height)
+                save_video(list(buffer), filename)
                 # p.join()
                 # p.terminate()
 
