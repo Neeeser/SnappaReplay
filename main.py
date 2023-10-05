@@ -120,7 +120,7 @@ frame_height = int(cap.get(4))
 print(f"Frame width: {frame_width} | Frame height: {frame_height}")
 
 # Adjust frame rate and duration as needed
-duration = 15  # duration to save in seconds
+duration = 5  # duration to save in seconds
 
 actual_fps = cap.get(cv2.CAP_PROP_FPS)
 frame_rate = actual_fps
