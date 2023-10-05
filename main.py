@@ -108,6 +108,7 @@ cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 
 
+
 if not cap.isOpened():
     print("Error: Could not open camera.")
     exit()
