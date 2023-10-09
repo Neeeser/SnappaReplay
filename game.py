@@ -28,29 +28,17 @@ TEAM2_PLAYER2_DROP = {'.'}
 BACKSPACE_KEY = ord('\x08')  # or simply 8
 BACKSPACE_KEY_MAC = 127
 
+Quit = {'escape'}
+
 
 andrew_url = "http://admin:4647@andrew.local:8081/video"
-team_info = {
-                'Team1': {
-                    'TeamName': "Team A",
-                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'TeamPoints': 0
-                },
-                'Team2': {
-                    'TeamName': "Team B",
-                    'PlayerOne': {'PlayerName': "John", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'TeamPoints': 0
-                }
-            }
 
 class SnappaWindow:
-    def __init__(self, stream_url=None, team_info=team_info):
+    def __init__(self, stream_url=None, team_info=None):
         # All your initialization code...
         self.stream_url = stream_url
 
-
+        # Initialize the camera
         self.cap = self.initialize_camera(self.stream_url)
         if self.cap:
             self.frame_width = int(self.cap.get(3))
@@ -59,7 +47,7 @@ class SnappaWindow:
             self.frame_width = 640
             self.frame_height = 480
 
-        self.screen = pygame.display.set_mode((self.frame_width, self.frame_height))
+        self.screen = pygame.display.set_mode((self.frame_width, self.frame_height), pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
 
 
@@ -96,11 +84,31 @@ class SnappaWindow:
 
         # Time and team
         self.elapsed_time = 0
+        if not team_info:
+            team_info = {
+                'Team1': {
+                    'TeamName': "Team A",
+                    'PlayerOne': {'PlayerName': "Chad", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Brad", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamPoints': 0
+                },
+                'Team2': {
+                    'TeamName': "Team B",
+                    'PlayerOne': {'PlayerName': "Albert", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Trent", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamPoints': 0
+                }
+            }
+
         self.team_info = team_info
 
         pygame.font.init()
         self.font = pygame.font.Font(None, 36)  # Font for FPS display
 
+        self.screen_info = pygame.display.Info()
+        self.screen_width = self.screen_info.current_w
+        self.screen_height = self.screen_info.current_h
+        print(f"Screen width: {self.screen_width}, Screen height: {self.screen_height}")
 
     def initialize_camera(self, url):
         if url:
@@ -120,88 +128,89 @@ class SnappaWindow:
         return None
 
 
-    def draw_scoreboard(self, frame, team_info, elapsed_time):
-        h, w, _ = frame.shape
-
-        # Flips the frame horizontally
-        #frame = cv2.flip(frame, 1)
+    def draw_scoreboard_pygame(self, team_info, elapsed_time):
+        w, h = self.screen.get_size()
 
         # Define properties of the scoreboard
-        height = self.frame_height // 8
-        color = (42, 50, 155)
-        alpha = 0.7
+        height = h // 8
+        color = (155, 50, 42)
 
-        # Create an overlay
-        overlay = frame.copy()
-
-        # Draw a rectangle for the scoreboard
-        cv2.rectangle(overlay, (0, h - height), (w, h), color, -1)
-        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-
-        # Calculate font scale based on rectangle height
-        num_lines = 3
-        max_line_height = height / (num_lines + 1)  # +1 for some spacing
-        font_scale = max_line_height / 25  # Adjust the denominator (25 in this case) based on how the text looks
-
-        # Add more space between lines
-        spacing_factor = 1.2
-        max_line_height *= spacing_factor  # Increase space between lines
+        # Create a semi-transparent rectangle (overlay) for the scoreboard
+        overlay = pygame.Surface((w, height))
+        overlay.set_alpha(180)  # Alpha value
+        overlay.fill(color)
+        self.screen.blit(overlay, (0, h - height))
 
         # Define font and colors
-        font = cv2.FONT_HERSHEY_COMPLEX
+        font_size = int(min(w/1.2, h) / 30)  # Adjust based on the look
+        font = pygame.font.Font(pygame.font.get_default_font(), font_size)
         header_color = (255, 255, 255)
-        text_color = (58, 224, 168)
-        font_thickness = int(self.frame_width * 0.001)
+        text_color = (168, 224, 58)
 
-        # Calculate positions
         left_position = int(w * 0.01)
         right_position = int(w * 0.55)
-        vertical_position = h - height + int(max_line_height)  # Starting at the first line
 
         # Draw Team's info for both teams
         for team, data in team_info.items():
+            vertical_position = h - height + font_size / 10  # Reset the vertical position for each team
             # Team's Name and Points
             team_text = f"{data['TeamName']} - {data['TeamPoints']} Points"
-
+            text_surface = font.render(team_text, True, header_color)
             if team == 'Team1':
-                position = left_position
+                position = (left_position, vertical_position)
             else:
-                text_width, _ = cv2.getTextSize(team_text, font, font_scale, font_thickness)[0]
-                position = w - int(w * 0.01) - text_width
-
-            cv2.putText(frame, team_text, (position, vertical_position), font, font_scale, header_color, font_thickness,
-                        cv2.LINE_AA)
-            vertical_position += int(max_line_height)
+                position = (w - text_surface.get_width() - left_position, vertical_position)
+            self.screen.blit(text_surface, position)
+            vertical_position += font_size * 1.2  # Adjust for spacing
 
             # Draw Players' stats
             for player in ['PlayerOne', 'PlayerTwo']:
                 player_info = data[player]
                 formatted_stats = "{:+.2f}".format(player_info["Stats"])
                 player_text = f"{player_info['PlayerName']} | {formatted_stats} H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
+                text_surface = font.render(player_text, True, text_color)
 
                 if team == 'Team1':
-                    position = left_position
                     player_text = f"H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']} {formatted_stats} | {player_info['PlayerName']}"
+                    position = (left_position, vertical_position)
+                    text_surface = font.render(player_text, True, text_color)
 
                 else:
-                    text_width, _ = cv2.getTextSize(player_text, font, font_scale, font_thickness)[0]
-                    position = w - int(w * 0.01) - text_width
+                    position = (w - text_surface.get_width() - left_position, vertical_position)
 
-                cv2.putText(frame, player_text, (position, vertical_position), font, font_scale, text_color,
-                            font_thickness,
-                            cv2.LINE_AA)
-                vertical_position += int(max_line_height)
 
-            # Reset vertical position for the second team
-            vertical_position = h - height + int(max_line_height)
-
-        # ...
+                self.screen.blit(text_surface, position)
+                vertical_position += font_size * 1.2
 
         # Display elapsed time at the bottom center
-        time_position = (w // 2 - int(self.frame_width * 0.05), h - int(self.frame_height * 0.01))
-        cv2.putText(frame, elapsed_time, time_position, font, font_scale, header_color, font_thickness, cv2.LINE_AA)
+        time_surface = font.render(elapsed_time, True, header_color)
+        time_position = (w // 2 - time_surface.get_width() // 2, h - font_size)
+        self.screen.blit(time_surface, time_position)
 
-        return frame
+    def resize_frame(self, frame):
+        aspect_ratio = self.frame_width / self.frame_height
+        width = self.screen_width
+        height = self.screen_height
+        # Calculate the new dimensions preserving aspect ratio
+        if width / height < aspect_ratio:  # Screen is "shorter" in aspect ratio than video
+            new_width = width
+            new_height = int(new_width / aspect_ratio)
+        else:
+            new_height = height
+            new_width = int(new_height * aspect_ratio)
+
+        # Resize the frame to the new dimensions
+        frame_resized = cv2.resize(frame, (new_width, new_height))
+
+        # Create a black background
+        background = np.zeros((height, width, 3), dtype=np.uint8)
+
+        # Overlay the resized frame onto the black background
+        y_offset = (height - new_height) // 2
+        x_offset = (width - new_width) // 2
+        background[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = frame_resized
+
+        return background
 
     def process_frame(self, frame):
         # All processing on the frame...
@@ -209,7 +218,12 @@ class SnappaWindow:
         frame = cv2.flip(frame, 1)
 
         # Like drawing the scoreboard and any overlays...
-        frame = self.draw_scoreboard(frame, self.team_info, self.elapsed_time)
+        #frame = self.draw_scoreboard(frame, self.team_info, self.elapsed_time)
+
+
+        # Resize the frame to fit the screen
+        frame = self.resize_frame(frame)
+
         return frame
 
     def mainloop(self):
@@ -221,6 +235,17 @@ class SnappaWindow:
                     if event.type == pygame.QUIT:
                         running = False
                     # Add other events like keypresses...
+                    elif event.type == pygame.VIDEORESIZE:
+                        self.screen_width = event.w
+                        self.screen_height = event.h
+                        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
+
+
+                    # Check if key Quit was pressed
+                    elif event.type == pygame.KEYDOWN:
+                        key = pygame.key.name(event.key)
+                        if key in Quit:
+                            running = False
 
                 ret, frame = self.cap.read()
 
@@ -228,23 +253,38 @@ class SnappaWindow:
                     print("Failed to grab frame")
                     break
 
-                # Draw the scoreboard
+
+                # Get the time elapsed
                 elapsed_time_sec = int(time.time() - start_time)
                 self.elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
+
+                # Draw the scoreboard
                 frame = self.process_frame(frame)
 
+                # Convert to RGB and transpose
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame_rgb_transposed = np.transpose(frame_rgb, (1, 0, 2))
                 frame_surface = pygame.surfarray.make_surface(frame_rgb_transposed)
+
+                # Display the frame
                 self.screen.blit(frame_surface, (0, 0))
 
                 # Display FPS
                 fps = int(self.clock.get_fps())
                 fps_text = self.font.render(f"FPS: {fps}", True, (255, 255, 255))
-                self.screen.blit(fps_text, (self.frame_width - fps_text.get_width(), 0))
 
+                self.draw_scoreboard_pygame(self.team_info, self.elapsed_time)
+
+                # Set the coordinates to (0, 0) to position in the top-left corner
+                self.screen.blit(fps_text, (0, 0))
+
+                # Update the display
                 pygame.display.flip()
+
+                # Send the frame to the writer process
                 self.output_queue.put(frame)
+
+                # Limit the frame rate
                 self.clock.tick(self.frame_rate)
 
         except KeyboardInterrupt:
