@@ -103,8 +103,8 @@ while True:
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
-cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+# cv2.namedWindow('Frame', cv2.WND_PROP_FULLSCREEN)
+# cv2.setWindowProperty('Frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 
 
@@ -334,6 +334,7 @@ def overlay_replay_banner(frame, overlay_width_percentage=0.3):
     x = int((frame_width - overlay_width) / 2)  # Used float division here and then converted to int
     #y = int((frame_height - overlay_height) / 10)  # Adjust the denominator as needed
     y = 0
+
 
     position = (x, y)
 
