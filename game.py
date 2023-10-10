@@ -1,8 +1,9 @@
 import os, cv2, time
+import queue
 from multiprocessing import Process, Queue
 import numpy as np
 import pygame
-from tools import video_writer
+from tools import video_writer, send_surface, receive_surface
 
 ## Define keyboard Macros as sets
 TEAM1_PLAYER1_HIT = {'w'}
@@ -25,6 +26,7 @@ TEAM2_PLAYER2_SINK = {'m'}
 TEAM2_PLAYER2_MISS = {','}
 TEAM2_PLAYER2_DROP = {'.'}
 
+REPLAY ={'s'}
 BACKSPACE_KEY = ord('\x08')  # or simply 8
 BACKSPACE_KEY_MAC = 127
 
@@ -34,7 +36,7 @@ Quit = {'escape'}
 andrew_url = "http://admin:4647@andrew.local:8081/video"
 
 class SnappaWindow:
-    def __init__(self, stream_url=None, team_info=None):
+    def __init__(self, stream_url=None, team_info=None, debug=False):
         # All your initialization code...
         self.stream_url = stream_url
 
@@ -73,13 +75,19 @@ class SnappaWindow:
         # self.out_full = cv2.VideoWriter(self.full_video_name, self.fourcc, self.frame_rate,
         #                                 (self.frame_width, self.frame_height))
 
+        print(self.frame_rate)
+
         # Create a queue for the video writer
         self.output_queue = Queue()
 
         self.writer_process = Process(target=video_writer, args=(self.output_queue, self.full_video_name,  (self.frame_width, self.frame_height), self.frame_rate))
         self.writer_process.start()
 
-        print(self.frame_rate)
+        # Create a queue for the clip_buffer
+        self.replay_duration = 5
+        self.clip_buffer = Queue(maxsize=int(self.frame_rate * self.replay_duration))
+        self.replay_mode = False
+
 
 
         # Time and team
@@ -110,6 +118,9 @@ class SnappaWindow:
         self.screen_height = self.screen_info.current_h
         print(f"Screen width: {self.screen_width}, Screen height: {self.screen_height}")
 
+
+
+        self.debug = debug
     def initialize_camera(self, url):
         if url:
             for i in range(5):
@@ -212,7 +223,7 @@ class SnappaWindow:
 
         return background
 
-    def process_frame(self, frame):
+    def process_frame_cv2(self, frame):
         # All processing on the frame...
         # Orentation, cropping, etc...
         frame = cv2.flip(frame, 1)
@@ -224,12 +235,29 @@ class SnappaWindow:
         # Resize the frame to fit the screen
         frame = self.resize_frame(frame)
 
+
+
         return frame
+
+
+
+    def process_frame_pygame(self):
+        # All processing on the frame...
+        self.draw_scoreboard_pygame(self.team_info, self.elapsed_time)
+
+        if self.debug:
+            # Display FPS
+            fps = int(self.clock.get_fps())
+            fps_text = self.font.render(f"FPS: {fps}", True, (255, 255, 255))
+
+            # Set the coordinates to (0, 0) to position in the top-left corner
+            self.screen.blit(fps_text, (0, 0))
 
     def mainloop(self):
         try:
             running = True
             start_time = time.time()
+            replay_frames = 0
             while running:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -247,6 +275,13 @@ class SnappaWindow:
                         if key in Quit:
                             running = False
 
+                        elif key in REPLAY:
+                            print("Replay mode")
+                            self.replay_mode = True
+
+
+
+
                 ret, frame = self.cap.read()
 
                 if not ret:
@@ -254,12 +289,15 @@ class SnappaWindow:
                     break
 
 
+
+
+
                 # Get the time elapsed
                 elapsed_time_sec = int(time.time() - start_time)
                 self.elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
                 # Draw the scoreboard
-                frame = self.process_frame(frame)
+                frame = self.process_frame_cv2(frame)
 
                 # Convert to RGB and transpose
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -269,23 +307,37 @@ class SnappaWindow:
                 # Display the frame
                 self.screen.blit(frame_surface, (0, 0))
 
-                # Display FPS
-                fps = int(self.clock.get_fps())
-                fps_text = self.font.render(f"FPS: {fps}", True, (255, 255, 255))
 
-                self.draw_scoreboard_pygame(self.team_info, self.elapsed_time)
 
-                # Set the coordinates to (0, 0) to position in the top-left corner
-                self.screen.blit(fps_text, (0, 0))
+                self.process_frame_pygame()
+                # 3. Put the Frame in the Buffer for the Video Writer
+                self.output_queue.put(send_surface(pygame.display.get_surface()))
+
+                if self.replay_mode:
+
+                    try:
+                        frame = receive_surface(self.clip_buffer.get(block=False))
+                        self.screen.blit(frame, (0, 0))
+                        replay_frames += 1
+
+                    except queue.Empty:
+                        self.replay_mode = False
+                        replay_frames = 0
+                        self.clip_buffer.empty()
+
+                else:
+                    self.clip_buffer.put(send_surface(pygame.display.get_surface()))
 
                 # Update the display
                 pygame.display.flip()
 
-                # Send the frame to the writer process
-                self.output_queue.put(frame)
 
                 # Limit the frame rate
-                self.clock.tick(self.frame_rate)
+                self.clock.tick(self.frame_rate + 1)
+
+
+
+
 
         except KeyboardInterrupt:
             pass
@@ -295,13 +347,16 @@ class SnappaWindow:
             self.cleanup()
 
     def cleanup(self):
-        self.cap.release()
         self.output_queue.put(None)
-        self.writer_process.join()
+
+        self.cap.release()
         pygame.quit()
+
+        self.writer_process.join()
+
         # Any other cleanup...
 
 if __name__ == "__main__":
 
-    game = SnappaWindow()
+    game = SnappaWindow(debug=False)
     game.mainloop()
