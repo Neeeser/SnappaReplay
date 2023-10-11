@@ -1,4 +1,5 @@
 import os
+import sys
 
 import cv2
 import numpy as np
@@ -22,7 +23,7 @@ def save_video(buffer, filename, frame_rate, frame_width, frame_height, fourcc=c
 
     out_clip.release()
     print(f"Saved to {filename}")
-
+    sys.exit(0)
 
 
 def video_writer(queue, output_filename, frame_size, fps):

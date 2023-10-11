@@ -1,5 +1,6 @@
 import os, cv2, time
 import queue
+import sys
 from multiprocessing import Process, Queue
 import numpy as np
 import pygame
@@ -85,9 +86,9 @@ class SnappaWindow:
 
         # Create a queue for the clip_buffer
         self.replay_duration = 5
-        self.clip_buffer = Queue(maxsize=int(self.frame_rate * self.replay_duration))
+        self.clip_buffer = Queue()
         self.replay_mode = False
-
+        self.clip_buffer_size = 0
 
 
         # Time and team
@@ -95,15 +96,15 @@ class SnappaWindow:
         if not team_info:
             team_info = {
                 'Team1': {
-                    'TeamName': "Team A",
-                    'PlayerOne': {'PlayerName': "Chad", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Brad", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamName': "Messy Room",
+                    'PlayerOne': {'PlayerName': "Trey", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "James", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 },
                 'Team2': {
-                    'TeamName': "Team B",
-                    'PlayerOne': {'PlayerName': "Albert", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Trent", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamName': "Ragno Club",
+                    'PlayerOne': {'PlayerName': "Ben", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Colin", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 }
             }
@@ -288,10 +289,6 @@ class SnappaWindow:
                     print("Failed to grab frame")
                     break
 
-
-
-
-
                 # Get the time elapsed
                 elapsed_time_sec = int(time.time() - start_time)
                 self.elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
@@ -312,6 +309,8 @@ class SnappaWindow:
                 self.process_frame_pygame()
                 # 3. Put the Frame in the Buffer for the Video Writer
                 self.output_queue.put(send_surface(pygame.display.get_surface()))
+                self.clip_buffer.put(send_surface(pygame.display.get_surface()))
+                self.clip_buffer_size += 1
 
                 if self.replay_mode:
 
@@ -323,10 +322,17 @@ class SnappaWindow:
                     except queue.Empty:
                         self.replay_mode = False
                         replay_frames = 0
-                        self.clip_buffer.empty()
 
                 else:
-                    self.clip_buffer.put(send_surface(pygame.display.get_surface()))
+                    while self.clip_buffer_size > self.replay_duration * self.frame_rate:
+                        try:
+                            self.clip_buffer.get(block=False)
+                            self.clip_buffer_size -= 1
+                        except queue.Empty:
+                            break
+
+
+
 
                 # Update the display
                 pygame.display.flip()
@@ -347,16 +353,28 @@ class SnappaWindow:
             self.cleanup()
 
     def cleanup(self):
+        print("Initiating cleanup...")
         self.output_queue.put(None)
 
-        self.cap.release()
-        pygame.quit()
-
         self.writer_process.join()
+        print("Writer process joined")
+        self.writer_process.terminate()
 
-        # Any other cleanup...
+
+        # Close the queues properly
+        self.output_queue.close()
+        self.clip_buffer.close()
+        print("Queues closed")
+
+        self.cap.release()
+        print("Camera released")
+        pygame.quit()
+        print("Pygame quit")
+        sys.exit()
+
+
 
 if __name__ == "__main__":
 
-    game = SnappaWindow(debug=False)
+    game = SnappaWindow(debug=False, stream_url="http://192.168.1.2:8080/video")
     game.mainloop()
