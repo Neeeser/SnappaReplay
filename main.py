@@ -83,7 +83,8 @@ if not os.path.exists(video_path):
 while True:
     try:
         #stream_url = "rtsp://admin:4647@andrew.local:8554/live"
-        stream_url = "http://admin:4647@andrew.local:8081/video"
+        #stream_url = "http://admin:4647@andrew.local:8081/video"
+        stream_url = "http://192.168.1.2:8080/video"
         cap = cv2.VideoCapture(stream_url)
         if cap.isOpened():
             break
@@ -125,7 +126,7 @@ duration = 5  # duration to save in seconds
 actual_fps = cap.get(cv2.CAP_PROP_FPS)
 frame_rate = actual_fps
 frame_display_time = int(1000 / frame_rate)
-
+print(f"Actual FPS: {actual_fps} | Frame display time: {frame_display_time} ms")
 
 #cap.set(cv2.CAP_PROP_FPS, frame_rate)
 
@@ -351,19 +352,19 @@ def undo_last_action(action_log):
 
 
 team_info = {
-                'Team1': {
-                    'TeamName': "Team A",
-                    'PlayerOne': {'PlayerName': "Joe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Mama", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'TeamPoints': 0
-                },
-                'Team2': {
-                    'TeamName': "Team B",
-                    'PlayerOne': {'PlayerName': "John", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Doe", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'TeamPoints': 0
-                }
-            }
+    'Team1': {
+        'TeamName': "Messy Room",
+        'PlayerOne': {'PlayerName': "Trey", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+        'PlayerTwo': {'PlayerName': "James", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+        'TeamPoints': 0
+    },
+    'Team2': {
+        'TeamName': "Ragno Club",
+        'PlayerOne': {'PlayerName': "Ben", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+        'PlayerTwo': {'PlayerName': "Colin", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+        'TeamPoints': 0
+    }
+}
 
 def main():
     print("Recording... Press 'q' to stop, 's' to save the last 30 seconds.")
