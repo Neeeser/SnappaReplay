@@ -33,14 +33,15 @@ def video_writer(queue, output_filename, frame_size, fps):
 
     while True:
         frame = queue.get()
-
         if frame is None:  # Use None as a sentinel to exit the loop
             break
 
         frame = receive_surface(frame)
         pygame_surface_array = pygame.surfarray.array3d(frame)
         frame = cv2.cvtColor(np.transpose(pygame_surface_array, (1, 0, 2)), cv2.COLOR_RGB2BGR)
-        frame = resize_frame(frame, frame_size[0], frame_size[1])
+        # frame = resize_frame(frame, frame_size[0], frame_size[1])
+        if frame.shape[:2] != frame_size:
+            frame = resize_frame(frame, frame_size[0], frame_size[1])
 
         out.write(frame)
 

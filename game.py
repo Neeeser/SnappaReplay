@@ -387,7 +387,8 @@ class SnappaWindow:
                         if self.replay_index >= len(self.clip_buffer):
                             self.replay_mode = False
                             self.replay_index = 0
-                            #self.clip_output_queue.put(list(self.clip_buffer))
+                            self.clip_output_queue.put(list(self.clip_buffer))
+                            self.clip_buffer.clear()
 
                     except IndexError:
                         self.replay_mode = False
@@ -430,12 +431,17 @@ class SnappaWindow:
     def cleanup(self):
         print("Initiating cleanup...")
         self.output_queue.put(None)
-        self.clip_output_queue.put(None
-                                   )
+        self.clip_output_queue.put(None)
+
+
+        self.cap.release()
+        print("Camera released")
+        pygame.quit()
+        print("Pygame quit")
+
         self.writer_process.join()
         print("Writer process joined")
         self.writer_process.terminate()
-
 
         # Close the queues properly
         self.output_queue.close()
@@ -443,10 +449,6 @@ class SnappaWindow:
         print("Queues closed")
 
 
-        self.cap.release()
-        print("Camera released")
-        pygame.quit()
-        print("Pygame quit")
         sys.exit()
 
 

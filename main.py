@@ -83,8 +83,8 @@ if not os.path.exists(video_path):
 while True:
     try:
         #stream_url = "rtsp://admin:4647@andrew.local:8554/live"
-        #stream_url = "http://admin:4647@andrew.local:8081/video"
-        stream_url = "http://192.168.1.2:8080/video"
+        stream_url = "http://admin:4647@andrew.local:8081/video"
+        #stream_url = "http://192.168.1.2:8080/video"
         cap = cv2.VideoCapture(stream_url)
         if cap.isOpened():
             break
