@@ -36,13 +36,12 @@ def video_writer(queue, output_filename, frame_size, fps):
         if frame is None:  # Use None as a sentinel to exit the loop
             break
 
-        frame = receive_surface(frame)
-        pygame_surface_array = pygame.surfarray.array3d(frame)
-        frame = cv2.cvtColor(np.transpose(pygame_surface_array, (1, 0, 2)), cv2.COLOR_RGB2BGR)
-        # frame = resize_frame(frame, frame_size[0], frame_size[1])
-        if frame.shape[:2] != frame_size:
-            frame = resize_frame(frame, frame_size[0], frame_size[1])
-
+        # frame = receive_surface(frame)
+        # pygame_surface_array = pygame.surfarray.array3d(frame)
+        # frame = cv2.cvtColor(np.transpose(pygame_surface_array, (1, 0, 2)), cv2.COLOR_RGB2BGR)
+        # # frame = resize_frame(frame, frame_size[0], frame_size[1])
+        # if frame.shape[:2] != frame_size:
+        #     frame = resize_frame(frame, frame_size[0], frame_size[1])
         out.write(frame)
 
     out.release()
@@ -149,3 +148,88 @@ def resize_surface(surface, width, height):
     background.blit(resized_surface, (x_offset, y_offset))
 
     return background
+
+
+def draw_scoreboard(frame, team_info, elapsed_time, frame_width, frame_height):
+    h, w, _ = frame.shape
+
+    # Flips the frame horizontally
+    frame = cv2.flip(frame, 1)
+
+    # Define properties of the scoreboard
+    height = frame_height // 8
+    color = (42, 50, 155)
+    alpha = 0.7
+
+    # Create an overlay
+    overlay = frame.copy()
+
+    # Draw a rectangle for the scoreboard
+    cv2.rectangle(overlay, (0, h - height), (w, h), color, -1)
+    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
+    # Calculate font scale based on rectangle height
+    num_lines = 3
+    max_line_height = height / (num_lines + 1)  # +1 for some spacing
+    font_scale = max_line_height / 25  # Adjust the denominator (25 in this case) based on how the text looks
+
+    # Add more space between lines
+    spacing_factor = 1.2
+    max_line_height *= spacing_factor  # Increase space between lines
+
+
+    # Define font and colors
+    font = cv2.FONT_HERSHEY_COMPLEX
+    header_color = (255, 255, 255)
+    text_color = (58, 224, 168)
+    font_thickness = int(frame_width * 0.001)
+
+    # Calculate positions
+    left_position = int(w * 0.01)
+    right_position = int(w * 0.55)
+    vertical_position = h - height + int(max_line_height)  # Starting at the first line
+
+
+    # Draw Team's info for both teams
+    for team, data in team_info.items():
+        # Team's Name and Points
+        team_text = f"{data['TeamName']} - {data['TeamPoints']} Points"
+
+        if team == 'Team1':
+            position = left_position
+        else:
+            text_width, _ = cv2.getTextSize(team_text, font, font_scale, font_thickness)[0]
+            position = w - int(w * 0.01) - text_width
+
+        cv2.putText(frame, team_text, (position, vertical_position), font, font_scale, header_color, font_thickness,
+                    cv2.LINE_AA)
+        vertical_position += int(max_line_height)
+
+        # Draw Players' stats
+        for player in ['PlayerOne', 'PlayerTwo']:
+            player_info = data[player]
+            formatted_stats = "{:+.2f}".format(player_info["Stats"])
+            player_text = f"{player_info['PlayerName']} | {formatted_stats} H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']}"
+
+            if team == 'Team1':
+                position = left_position
+                player_text = f"H: {player_info['Hits']} M: {player_info['Misses']} S: {player_info['Sinks']} D: {player_info['Drops']} {formatted_stats} | {player_info['PlayerName']}"
+
+            else:
+                text_width, _ = cv2.getTextSize(player_text, font, font_scale, font_thickness)[0]
+                position = w - int(w * 0.01) - text_width
+
+            cv2.putText(frame, player_text, (position, vertical_position), font, font_scale, text_color, font_thickness,
+                        cv2.LINE_AA)
+            vertical_position += int(max_line_height)
+
+        # Reset vertical position for the second team
+        vertical_position = h - height + int(max_line_height)
+
+    # ...
+
+    # Display elapsed time at the bottom center
+    time_position = (w // 2 - int(frame_width * 0.05), h - int(frame_height * 0.01))
+    cv2.putText(frame, elapsed_time, time_position, font, font_scale, header_color, font_thickness, cv2.LINE_AA)
+
+    return frame

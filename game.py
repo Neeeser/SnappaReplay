@@ -5,30 +5,52 @@ from collections import deque
 from multiprocessing import Process, Queue
 import numpy as np
 import pygame
-from tools import video_writer, send_surface, receive_surface, resize_surface, save_video_process
+from tools import video_writer, send_surface, receive_surface, resize_surface, save_video_process, draw_scoreboard
 
 ## Define keyboard Macros as sets
-TEAM1_PLAYER1_HIT = {'w'}
+TEAM1_PLAYER1_HIT = {'q'}
 TEAM1_PLAYER1_SINK = {'e'}
-TEAM1_PLAYER1_MISS = {'r'}
-TEAM1_PLAYER1_DROP = {'t'}
+TEAM1_PLAYER1_MISS = {'w'}
+TEAM1_PLAYER1_DROP = {'r'}
 
 TEAM1_PLAYER2_HIT = {'z'}
-TEAM1_PLAYER2_SINK = {'x'}
-TEAM1_PLAYER2_MISS = {'c'}
+TEAM1_PLAYER2_SINK = {'c'}
+TEAM1_PLAYER2_MISS = {'x'}
 TEAM1_PLAYER2_DROP = {'v'}
 
 TEAM2_PLAYER1_HIT = {'u'}
-TEAM2_PLAYER1_SINK = {'i'}
-TEAM2_PLAYER1_MISS = {'o'}
+TEAM2_PLAYER1_SINK = {'o'}
+TEAM2_PLAYER1_MISS = {'i'}
 TEAM2_PLAYER1_DROP = {'p'}
 
 TEAM2_PLAYER2_HIT = {'n'}
-TEAM2_PLAYER2_SINK = {'m'}
-TEAM2_PLAYER2_MISS = {','}
+TEAM2_PLAYER2_SINK = {','}
+TEAM2_PLAYER2_MISS = {'m'}
 TEAM2_PLAYER2_DROP = {'.'}
 
+ACTIONS = {
+    'q': {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Hits'},
+    'e': {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Sinks'},
+    'w': {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Misses'},
+    'r': {'team': 'Team1', 'player': 'PlayerOne', 'action': 'Drops'},
 
+    'z': {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Hits'},
+    'c': {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Sinks'},
+    'x': {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Misses'},
+    'v': {'team': 'Team1', 'player': 'PlayerTwo', 'action': 'Drops'},
+
+    'u': {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Hits'},
+    'o': {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Sinks'},
+    'i': {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Misses'},
+    'p': {'team': 'Team2', 'player': 'PlayerOne', 'action': 'Drops'},
+
+    'n': {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Hits'},
+    ',': {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Sinks'},
+    'm': {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Misses'},
+    '.': {'team': 'Team2', 'player': 'PlayerTwo', 'action': 'Drops'}
+}
+
+BACKSPACE = {"backspace"}
 SPEED_UP = {'='}
 SPEED_DOWN = {'-'}
 REPLAY ={'s'}
@@ -101,21 +123,21 @@ class SnappaWindow:
         self.replay_mode = False
         self.clip_buffer_size = 0
 
-
+        self.action_log = []
         # Time and team
         self.elapsed_time = 0
         if not team_info:
             team_info = {
                 'Team1': {
-                    'TeamName': "Messy Room",
-                    'PlayerOne': {'PlayerName': "Trey", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "James", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamName': "Splash Bros",
+                    'PlayerOne': {'PlayerName': "Chair", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Chair Thrower", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 },
                 'Team2': {
-                    'TeamName': "Ragno Club",
-                    'PlayerOne': {'PlayerName': "Ben", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
-                    'PlayerTwo': {'PlayerName': "Colin", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'TeamName': "Shipyardigans",
+                    'PlayerOne': {'PlayerName': "Ship", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
+                    'PlayerTwo': {'PlayerName': "Yard", 'Hits': 0, 'Misses': 0, 'Sinks': 0, 'Drops': 0, 'Stats': 0.0},
                     'TeamPoints': 0
                 }
             }
@@ -304,6 +326,11 @@ class SnappaWindow:
 
         return frame_surface
 
+    def undo_last_action(self):
+        if self.action_log:
+            last_action = self.action_log.pop()  # Get the last action
+            team, player, action = last_action
+            self.team_info[team][player][action] -= 1  # Decrement the respective action for the player
 
     def process_replay_frame_pygame(self, frame):
         width = self.screen_width
@@ -314,6 +341,18 @@ class SnappaWindow:
         overlay = self.overlay_replay_banner(b)
         self.screen.blit(overlay, (0, 0))
 
+    def update_score(self):
+        # loop through the teams and update team points based on these rules one 1 is +1 points 1 sink is +1 points
+        for team in self.team_info:
+            self.team_info[team]['TeamPoints'] = self.team_info[team]['PlayerOne']['Hits'] + self.team_info[team]['PlayerOne'][
+                'Sinks'] + self.team_info[team]['PlayerTwo']['Hits'] + self.team_info[team]['PlayerTwo']['Sinks']
+            self.team_info[team]['PlayerOne']['Stats'] = self.team_info[team]['PlayerOne']['Hits'] + (
+                        self.team_info[team]['PlayerOne']['Sinks'] * 3) - (self.team_info[team]['PlayerOne']['Misses'] / 2) - \
+                                                    self.team_info[team]['PlayerOne']['Drops']
+            self.team_info[team]['PlayerTwo']['Stats'] = self.team_info[team]['PlayerTwo']['Hits'] + (
+                        self.team_info[team]['PlayerTwo']['Sinks'] * 3) - (self.team_info[team]['PlayerTwo']['Misses'] / 2) - \
+                                                    self.team_info[team]['PlayerTwo']['Drops']
+
     def mainloop(self):
         try:
             running = True
@@ -321,6 +360,7 @@ class SnappaWindow:
 
             while running:
                 for event in pygame.event.get():
+
                     if event.type == pygame.QUIT:
                         running = False
                     # Add other events like keypresses...
@@ -333,6 +373,7 @@ class SnappaWindow:
                     # Check if key Quit was pressed
                     elif event.type == pygame.KEYDOWN:
                         key = pygame.key.name(event.key)
+                        print(key)
                         if key in Quit:
                             running = False
 
@@ -350,6 +391,22 @@ class SnappaWindow:
                             if self.slow_mo_ratio == 0:
                                 self.slow_mo_ratio += 1
 
+                        # Check for key press
+                        elif key in ACTIONS:
+                            current_action = ACTIONS[key]
+                            team = current_action['team']
+                            player = current_action['player']
+                            action = current_action['action']
+
+                            # Increment the respective action for the player
+                            self.team_info[team][player][action] += 1
+
+                            # Add to the log
+                            self.action_log.append((team, player, action))
+                        elif key in BACKSPACE:
+                            self.undo_last_action()
+
+                self.update_score()
                 ret, frame = self.cap.read()
 
                 if not ret:
@@ -360,6 +417,8 @@ class SnappaWindow:
                 elapsed_time_sec = int(time.time() - start_time)
                 self.elapsed_time = f"{elapsed_time_sec // 60:02d}:{elapsed_time_sec % 60:02d}"  # Convert to MM:SS format
 
+
+                self.output_queue.put(draw_scoreboard(frame, self.team_info, self.elapsed_time, self.frame_width, self.frame_height))
                 # Draw the scoreboard
                 frame = self.process_frame_cv2(frame)
 
@@ -371,7 +430,7 @@ class SnappaWindow:
                 # Display the frame
                 self.screen.blit(frame_surface, (0, 0))
                 self.process_frame_pygame()
-                self.output_queue.put(send_surface(pygame.display.get_surface()))
+                # self.output_queue.put(send_surface(pygame.display.get_surface()))
 
                 # 3. Put the Frame in the Buffer for the Video Writer
 
@@ -455,5 +514,5 @@ class SnappaWindow:
 
 if __name__ == "__main__":
 
-    game = SnappaWindow(debug=True)
+    game = SnappaWindow(stream_url="http://192.168.1.2:8080/video", debug=True)
     game.mainloop()
